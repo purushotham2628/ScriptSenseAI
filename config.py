@@ -101,6 +101,29 @@ TRANSLATION = {
     # Batch translation settings
     'batch_size': 8,
     'max_input_length': 512,
+    
+    # ===== IMPROVED TRANSLATION SETTINGS =====
+    # These parameters optimize translation accuracy
+    
+    # Beam search parameters for better quality
+    'num_beams': 4,  # More beams = better but slower
+    'early_stopping': True,  # Stop when high-quality translation found
+    
+    # Generation parameters
+    'temperature': 0.7,  # Lower = more deterministic (0.7 recommended)
+    'repetition_penalty': 1.2,  # Avoid repetitive output
+    
+    # Confidence threshold for filtering
+    'confidence_threshold': 0.5,  # Min confidence (0.0-1.0)
+    
+    # Enable translation caching
+    'enable_caching': True,
+    
+    # Preprocessing options
+    'normalize_unicode': True,  # Normalize to NFKC form
+    'remove_diacritics': True,  # Remove accents for better compatibility
+    'expand_abbreviations': True,  # Expand common abbreviations
+    'validate_latin': True,  # Check for recognizable Latin words
 }
 
 # ============================================
