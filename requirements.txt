@@ -10,6 +10,8 @@ easyocr==1.7.0
 transformers==4.34.0
 tokenizers==0.14.0
 safetensors==0.4.1
+sentencepiece==0.2.1
+sacremoses==0.1.1
 scipy==1.11.3
 scikit-image==0.21.0
 matplotlib==3.8.1

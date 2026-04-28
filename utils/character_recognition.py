@@ -6,7 +6,8 @@ Recognizes characters from detected regions using EasyOCR
 import cv2
 import numpy as np
 from typing import List, Dict, Tuple
-import easyocr
+
+from .ocr_languages import create_easyocr_reader
 
 
 class CharacterRecognizer:
@@ -19,7 +20,7 @@ class CharacterRecognizer:
         Args:
             languages: List of language codes
         """
-        self.reader = easyocr.Reader(languages, gpu=False)
+        self.reader, self.languages = create_easyocr_reader(languages)
         self.recognized_characters = []
     
     def recognize_character(self, image_region: np.ndarray) -> Dict:

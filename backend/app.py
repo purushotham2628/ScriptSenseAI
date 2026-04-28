@@ -3,7 +3,7 @@ Main Backend API for Ancient Script Decoding System
 FastAPI application with endpoints for image processing pipeline
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -44,10 +44,10 @@ app.add_middleware(
 
 # Initialize processing modules
 preprocessor = ImagePreprocessor()
-detector = TextDetector(languages=['en', 'la', 'el'])
+detector = TextDetector(languages=['en'])
 recognizer = CharacterRecognizer(languages=['en', 'la', 'el'])
 cleaner = TextCleaner()
-translator = TextTranslator(source_lang='en', target_lang='en')
+translator = TextTranslator(source_lang='la', target_lang='en')
 
 # Store recent processing results
 processing_history = {}
@@ -80,7 +80,16 @@ def get_image_dimensions(image: np.ndarray) -> dict:
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
+    """Serve the web frontend."""
+    index_path = os.path.join(templates_dir, "index.html")
+    if not os.path.exists(index_path):
+        raise HTTPException(status_code=404, detail="Frontend template not found")
+    return FileResponse(index_path)
+
+
+@app.get("/api")
+async def api_info():
+    """API information endpoint"""
     return {
         "name": "Ancient Script Decoding System",
         "version": "1.0.0",
@@ -140,8 +149,9 @@ async def upload_image(file: UploadFile = File(...)):
 
 @app.post("/process")
 async def process_image(file: UploadFile = File(...), 
-                       source_language: str = 'en',
-                       target_language: str = 'en'):
+                       source_language: str = Form('la'),
+                       target_language: str = Form('en'),
+                       source_lang: Optional[str] = Form(None)):
     """
     Main processing pipeline: preprocessing -> detection -> recognition -> cleaning -> translation
     
@@ -152,52 +162,75 @@ async def process_image(file: UploadFile = File(...),
         # Read image
         contents = await file.read()
         
+        requested_source_language = source_lang or source_language or 'la'
+        requested_target_language = target_language or 'en'
+
         # ===== STEP 1: PREPROCESSING =====
         print("[1] Starting image preprocessing...")
         original, processed = preprocessor.preprocess_complete_pipeline(image_bytes=contents)
+        ocr_image = preprocessor.ocr_image if preprocessor.ocr_image is not None else processed
         
         preprocessed_b64 = encode_image_to_base64(processed)
         
-        # ===== STEP 2: TEXT DETECTION =====
-        print("[2] Detecting text regions...")
-        detections, detection_image = detector.detect_text_regions(processed, 
-                                                                   confidence_threshold=0.3)
+        # ===== STEP 2: OCR EXTRACTION =====
+        print("[2] Extracting text with EasyOCR...")
+        ocr_result = detector.extract_text(
+            ocr_image,
+            confidence_threshold=0.2,
+            source_lang=requested_source_language
+        )
+        detections = ocr_result['detections']
+        detection_image = detector._draw_bounding_boxes(ocr_image, detections)
         
         detection_b64 = encode_image_to_base64(detection_image)
         
-        print(f"   Found {len(detections)} text regions")
+        print(f"   Found {len(detections)} high-confidence text regions")
+        print(f"   Detected language: {ocr_result['source_language']}")
+        print(f"   Raw OCR text: {ocr_result['raw_text']}")
+        print(f"   Mean OCR confidence: {ocr_result['confidence']:.4f}")
         
-        # ===== STEP 3: CHARACTER RECOGNITION =====
-        print("[3] Recognizing characters...")
-        recognized_detections = recognizer.batch_recognize_from_detections(
-            processed, detections)
-        
-        # Extract recognized text
-        recognized_texts = [d.get('recognized_text', d.get('text', '')) 
-                           for d in recognized_detections]
-        raw_text = " ".join(recognized_texts)
+        # ===== STEP 3: TEXT AGGREGATION =====
+        print("[3] Aggregating OCR text...")
+        raw_text = ocr_result['raw_text']
+        recognized_texts = [item['text'] for item in ocr_result['results']]
         
         # ===== STEP 4: TEXT CLEANING =====
         print("[4] Cleaning extracted text...")
-        cleaned_text = cleaner.clean_text(raw_text)
+        cleaned_text = cleaner.clean_alpha_text(raw_text)
         cleaned_stats = cleaner.get_cleaning_stats(raw_text, cleaned_text)
+        print("Cleaned:", cleaned_text)
         
         # ===== STEP 5: TRANSLATION =====
         print("[5] Translating text...")
-        if source_language != 'en':
-            translator.set_language_pair(source_language, 'en')
-        
-        translation_result = translator.translate_text(cleaned_text)
+        print("INPUT TO TRANSLATOR:", cleaned_text)
+        translation_result = translator.translate_text(
+            cleaned_text,
+            source_lang=ocr_result['source_language'],
+            target_lang=requested_target_language
+        )
+        print("OUTPUT FROM TRANSLATOR:", translation_result['translated_text'])
+        notes = [
+            ocr_result.get('note', ''),
+            translation_result.get('note', '')
+        ]
+        note = "; ".join(dict.fromkeys(item for item in notes if item))
         
         # ===== PREPARE RESPONSE =====
         result = {
             'success': True,
             'timestamp': datetime.now().isoformat(),
+            'raw_text': raw_text,
+            'cleaned_text': cleaned_text,
+            'translated_text': translation_result['translated_text'],
+            'source_language': ocr_result['source_language'],
+            'target_language': requested_target_language,
+            'confidence': ocr_result['confidence'],
+            'note': note,
             'pipeline': {
                 'preprocessing': {
                     'status': 'completed',
                     'image': preprocessed_b64,
-                    'info': 'Grayscale, denoised, CLAHE contrast, thresholded'
+                    'info': 'Grayscale, 2x resize, brightness normalization, CLAHE, Gaussian blur, adaptive threshold'
                 },
                 'detection': {
                     'status': 'completed',
@@ -208,7 +241,8 @@ async def process_image(file: UploadFile = File(...),
                 'recognition': {
                     'status': 'completed',
                     'recognized_texts': recognized_texts[:10],
-                    'raw_text': raw_text
+                    'raw_text': raw_text,
+                    'confidence': ocr_result['confidence']
                 },
                 'cleaning': {
                     'status': 'completed',
@@ -218,17 +252,18 @@ async def process_image(file: UploadFile = File(...),
                 },
                 'translation': {
                     'status': 'completed',
-                    'source_language': source_language,
-                    'target_language': 'en',
+                    'source_language': ocr_result['source_language'],
+                    'target_language': requested_target_language,
                     'original_text': cleaned_text,
                     'translated_text': translation_result['translated_text'],
-                    'translated': translation_result['translated']
+                    'translated': translation_result['translated'],
+                    'note': translation_result.get('note', '')
                 }
             },
             'final_output': {
                 'extracted_text': cleaned_text,
                 'translated_text': translation_result['translated_text'],
-                'confidence_score': 0.85
+                'confidence_score': ocr_result['confidence']
             }
         }
         

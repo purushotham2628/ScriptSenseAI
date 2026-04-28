@@ -13,6 +13,10 @@ class TextCleaner:
     
     def __init__(self):
         """Initialize text cleaner"""
+        self.noise_words = {
+            'faa', 'ka', 'naa', 'aaa', 'ooo', 'lll', 'iii',
+            'ocr', 'img', 'imge', 'imoge', 'dero', 'cocodan'
+        }
         self.common_errors = {
             '0': 'O',  # Zero to O
             '1': 'I',  # One to I
@@ -54,6 +58,36 @@ class TextCleaner:
         # Remove special characters that shouldn't be there
         text = self._remove_noise_characters(text)
         
+        return text
+
+    def clean_alpha_text(self, text: str) -> str:
+        """
+        Clean Latin OCR text before translation.
+
+        Keeps only Latin alphabetic words, removes short garbage tokens, and
+        filters known OCR artifact words.
+        """
+        text = unicodedata.normalize('NFKC', text or '')
+        text = self.fix_merged_words(text)
+        text = re.sub(r'[^a-zA-Z ]', '', text)
+
+        words = text.split()
+        words = [
+            word for word in words
+            if len(word) > 2 and word.lower() not in self.noise_words
+        ]
+
+        return " ".join(words).lower()
+
+    def fix_merged_words(self, text: str) -> str:
+        """
+        Split common OCR word merges without using a heavy language model.
+        """
+        text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text or '')
+        text = re.sub(r'\b(lorem)(ipsum)\b', r'\1 \2', text, flags=re.IGNORECASE)
+        text = re.sub(r'\b(ipsum)(dolor)\b', r'\1 \2', text, flags=re.IGNORECASE)
+        text = re.sub(r'\b(dolor)(sit)\b', r'\1 \2', text, flags=re.IGNORECASE)
+        text = re.sub(r'\b(sit)(amet)\b', r'\1 \2', text, flags=re.IGNORECASE)
         return text
     
     def _remove_ocr_artifacts(self, text: str) -> str:

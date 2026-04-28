@@ -1,12 +1,10 @@
 """
 Image Preprocessing Module
-Handles image enhancement, grayscale conversion, noise removal, and thresholding
+Handles OCR-oriented preprocessing for noisy, low-contrast inscriptions.
 """
 
 import cv2
 import numpy as np
-from PIL import Image
-import io
 from typing import Tuple, Optional
 
 
@@ -17,6 +15,7 @@ class ImagePreprocessor:
         """Initialize the image preprocessor"""
         self.original_image = None
         self.processed_image = None
+        self.ocr_image = None
     
     def load_image(self, image_path: Optional[str] = None, image_bytes: Optional[bytes] = None) -> np.ndarray:
         """
@@ -55,12 +54,18 @@ class ImagePreprocessor:
         if image is None:
             image = self.original_image
         
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        if len(image.shape) == 2:
+            return image
+
+        if image.shape[2] == 4:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+        else:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         return gray
     
     def denoise_image(self, image: np.ndarray) -> np.ndarray:
         """
-        Remove noise from image using bilateral filtering
+        Remove light noise from image using Gaussian blur.
         
         Args:
             image: Input image
@@ -68,9 +73,19 @@ class ImagePreprocessor:
         Returns:
             Denoised image
         """
-        # Apply bilateral filter for edge-preserving denoising
-        denoised = cv2.bilateralFilter(image, 9, 75, 75)
-        return denoised
+        return cv2.GaussianBlur(image, (5, 5), 0)
+
+    def normalize_brightness(self, image: np.ndarray) -> np.ndarray:
+        """
+        Normalize brightness while preserving local inscription detail.
+
+        Args:
+            image: Input grayscale image
+
+        Returns:
+            Brightness-normalized grayscale image
+        """
+        return cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX)
     
     def apply_clahe(self, image: np.ndarray) -> np.ndarray:
         """
@@ -103,9 +118,10 @@ class ImagePreprocessor:
             _, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         
         elif method == 'adaptive':
-            # Adaptive thresholding (better for varying illumination)
+            # Adaptive thresholding handles stone texture and uneven lighting
+            # without turning inscriptions into edge outlines.
             binary = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                          cv2.THRESH_BINARY, 11, 2)
+                                           cv2.THRESH_BINARY, 31, 9)
         else:
             # Simple binary threshold
             _, binary = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY)
@@ -147,6 +163,22 @@ class ImagePreprocessor:
         height = int((width / image.shape[1]) * image.shape[0])
         resized = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
         return resized
+
+    def upscale_image(self, image: np.ndarray, scale: float = 2.0) -> np.ndarray:
+        """
+        Upscale image for OCR while preserving character contours.
+
+        Args:
+            image: Input image
+            scale: Scale factor
+
+        Returns:
+            Upscaled image
+        """
+        if scale == 1.0:
+            return image
+
+        return cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
     
     def preprocess_complete_pipeline(self, image_path: Optional[str] = None, 
                                     image_bytes: Optional[bytes] = None) -> Tuple[np.ndarray, np.ndarray]:
@@ -163,27 +195,32 @@ class ImagePreprocessor:
         # Load image
         self.load_image(image_path, image_bytes)
         
-        # Resize for consistent processing
+        # Resize for consistent processing, then upscale for better OCR.
         resized = self.resize_image(self.original_image)
+        upscaled = self.upscale_image(resized, scale=2.0)
         
-        # Convert to grayscale
-        gray = self.convert_to_grayscale(resized)
+        # Convert to grayscale.
+        print("[preprocess] grayscale")
+        gray = self.convert_to_grayscale(upscaled)
+
+        print("[preprocess] brightness normalization")
+        normalized = self.normalize_brightness(gray)
+
+        print("[preprocess] CLAHE contrast enhancement")
+        enhanced = self.apply_clahe(normalized)
+        self.ocr_image = enhanced
         
-        # Denoise
-        denoised = self.denoise_image(gray)
+        # Light denoising only; aggressive filters can erase shallow glyphs.
+        print("[preprocess] light Gaussian blur")
+        blurred = self.denoise_image(enhanced)
         
-        # Apply CLAHE for contrast enhancement
-        enhanced = self.apply_clahe(denoised)
-        
-        # Apply thresholding (adaptive for varying illumination)
-        binary = self.apply_thresholding(enhanced, method='adaptive')
-        
-        # Morphological operations
-        processed = self.apply_morphological_operations(binary)
+        # Binarize with adaptive thresholding for low-contrast inscriptions.
+        print("[preprocess] adaptive Gaussian threshold")
+        processed = self.apply_thresholding(blurred, method='adaptive')
         
         self.processed_image = processed
         
-        return resized, processed
+        return upscaled, processed
     
     def save_image(self, image: np.ndarray, output_path: str) -> None:
         """
