@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ancient Script Decoder</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🏛️ Ancient Script Decoder</h1>
+            <p class="subtitle">AI-Powered Image Processing Pipeline</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <h2>Step 1: Upload Image</h2>
+                <div class="upload-area" id="uploadArea">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>Drag and drop your image here or click to select</p>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    Choose Image
+                </button>
+            </section>
+
+            <!-- Processing Options -->
+            <section class="options-section">
+                <h2>Step 2: Processing Options</h2>
+                <div class="options-grid">
+                    <div class="option-group">
+                        <label for="sourceLanguage">Source Language:</label>
+                        <select id="sourceLanguage">
+                            <option value="en">English</option>
+                            <option value="la">Latin</option>
+                            <option value="el">Ancient Greek</option>
+                            <option value="ar">Arabic</option>
+                            <option value="he">Hebrew</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label for="targetLanguage">Target Language:</label>
+                        <select id="targetLanguage">
+                            <option value="en" selected>English</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-success" id="processBtn" onclick="processImage()" disabled>
+                    Process Image
+                </button>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display:none;">
+                <h2>Processing Results</h2>
+                
+                <!-- Progress Steps -->
+                <div class="pipeline-display">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-name">Preprocessing</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-name">Detection</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-name">Recognition</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-name">Cleaning</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <div class="step-name">Translation</div>
+                    </div>
+                </div>
+
+                <!-- Image Comparisons -->
+                <div class="images-grid">
+                    <div class="image-box">
+                        <h3>Original Image</h3>
+                        <img id="originalImage" src="" alt="Original">
+                    </div>
+                    <div class="image-box">
+                        <h3>Preprocessed</h3>
+                        <img id="preprocessedImage" src="" alt="Preprocessed">
+                    </div>
+                    <div class="image-box">
+                        <h3>Text Detection</h3>
+                        <img id="detectionImage" src="" alt="Detection">
+                    </div>
+                </div>
+
+                <!-- Text Results -->
+                <div class="text-results">
+                    <div class="result-box">
+                        <h3>Raw Extracted Text</h3>
+                        <div class="text-content" id="rawText"></div>
+                    </div>
+                    <div class="result-box">
+                        <h3>Cleaned Text</h3>
+                        <div class="text-content" id="cleanedText"></div>
+                    </div>
+                    <div class="result-box">
+                        <h3>Translated Text</h3>
+                        <div class="text-content" id="translatedText"></div>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="stats-box">
+                    <h3>Processing Statistics</h3>
+                    <div class="stats-grid" id="statsGrid"></div>
+                </div>
+
+                <!-- Actions -->
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="downloadResults()">
+                        Download Results
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetForm()">
+                        Process Another Image
+                    </button>
+                </div>
+            </section>
+
+            <!-- Loading Spinner -->
+            <div class="loading-spinner" id="loadingSpinner" style="display:none;">
+                <div class="spinner"></div>
+                <p id="loadingText">Processing image...</p>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage" style="display:none;">
+                <span id="errorText"></span>
+                <button onclick="closeError()">×</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Ancient Script Decoder v1.0 | Powered by AI & PyTorch</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
