@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ancient-ai-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ancient-ai-api
+  template:
+    metadata:
+      labels:
+        app: ancient-ai-api
+    spec:
+      containers:
+        - name: api
+          image: ancient-ai-api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ENVIRONMENT
+              value: production
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ancient-ai-secrets
+                  key: database-url
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ancient-ai-secrets
+                  key: secret-key
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ancient-ai-api
+spec:
+  selector:
+    app: ancient-ai-api
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP

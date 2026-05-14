@@ -13,12 +13,24 @@ from .ocr_languages import create_easyocr_reader
 class TextDetector:
     """Detects text regions in images"""
     OCR_LANGUAGE_MAP = {
+        "auto": ["en"],
+        "unknown": ["en"],
         "la": ["en"],
         "en": ["en"],
         "ar": ["ar"],
         "he": ["en"],
         "gr": ["en"],
         "el": ["en"],
+        "sa": ["hi", "en"],
+        "hi": ["hi", "en"],
+        "ta": ["ta", "en"],
+        "te": ["te", "en"],
+        "kn": ["kn", "en"],
+        "ml": ["ml", "en"],
+        "bn": ["bn", "en"],
+        "zh": ["ch_sim", "en"],
+        "ja": ["ja", "en"],
+        "ko": ["ko", "en"],
     }
     
     def __init__(self, languages: List[str] = ['en']):
@@ -157,6 +169,28 @@ class TextDetector:
             return "ar"
         if source_lang in {"hebrew", "heb"}:
             return "he"
+        if source_lang in {"sanskrit", "devanagari", "san"}:
+            return "sa"
+        if source_lang in {"hindi", "hin"}:
+            return "hi"
+        if source_lang in {"tamil", "tam"}:
+            return "ta"
+        if source_lang in {"telugu", "tel"}:
+            return "te"
+        if source_lang in {"kannada", "kan"}:
+            return "kn"
+        if source_lang in {"malayalam", "mal"}:
+            return "ml"
+        if source_lang in {"bengali", "ben"}:
+            return "bn"
+        if source_lang in {"chinese", "mandarin", "zho"}:
+            return "zh"
+        if source_lang in {"japanese", "jpn"}:
+            return "ja"
+        if source_lang in {"korean", "kor"}:
+            return "ko"
+        if source_lang in {"auto", "unknown"}:
+            return source_lang
         return source_lang if source_lang in self.OCR_LANGUAGE_MAP else "la"
 
     def detect_script_language(self, text: str) -> str:

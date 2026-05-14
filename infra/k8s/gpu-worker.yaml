@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ancient-ai-gpu-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ancient-ai-gpu-worker
+  template:
+    metadata:
+      labels:
+        app: ancient-ai-gpu-worker
+    spec:
+      containers:
+        - name: worker
+          image: ancient-ai-gpu:latest
+          command: ["celery", "-A", "backend.workers.celery_app", "worker", "--loglevel=INFO", "-Q", "training,inference"]
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+              memory: "16Gi"
+              cpu: "4"

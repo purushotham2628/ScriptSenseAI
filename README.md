@@ -1,624 +1,390 @@
-# 🏛️ Ancient Script Decoder - AI-Driven System for Decoding and Preservation of Ancient Scripts
+# ScriptSenseAI - Ancient Script Recognition Platform
 
-A complete AI-powered system for decoding, recognizing, and translating ancient scripts from images. This project combines cutting-edge computer vision, deep learning, and NLP techniques to extract and translate text from stone inscriptions, manuscripts, and archaeological artifacts.
+ScriptSenseAI is an AI-powered platform for ancient script image processing, OCR, translation, dataset ingestion, and research-grade model experimentation. It includes a FastAPI backend, a polished web frontend, an extensible ML pipeline, dataset upload support, active-learning scaffolding, vector search scaffolding, Docker files, and deployment templates.
 
-## 📋 Table of Contents
+Repository:
+`https://github.com/purushotham2628/ScriptSenseAI.git`
 
-- [Features](#features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Usage](#usage)
-- [API Endpoints](#api-endpoints)
-- [Modules](#modules)
-- [Examples](#examples)
-- [Performance](#performance)
-- [Contributing](#contributing)
-- [License](#license)
+## What This Project Does
 
-## ✨ Features
+- Upload inscription/manuscript images through the browser.
+- Preprocess noisy, low-light, damaged, faded, or scanned images.
+- Detect text regions and draw bounding boxes.
+- Extract OCR text using EasyOCR-backed processing.
+- Clean OCR output.
+- Translate Latin to English when the translation model is available.
+- Load source language options dynamically from the backend.
+- Expose production-style API routes for datasets, inference, training jobs, active learning, and WebSocket progress.
+- Provide a scalable backend architecture for future unseen-dataset training and continual learning.
 
-✅ **Image Preprocessing**
-- Grayscale conversion
-- Noise removal (bilateral filtering)
-- Contrast enhancement (CLAHE)
-- Adaptive thresholding
-- Morphological operations
+## Project Structure
 
-✅ **Text Detection**
-- EasyOCR-based region detection
-- Bounding box generation
-- Character/word segmentation
-- Confidence scoring
-
-✅ **Character Recognition**
-- Pre-trained OCR models
-- Multi-language support
-- Confidence-weighted recognition
-- Enhanced recognition with upscaling
-
-✅ **Text Cleaning & Correction**
-- OCR noise removal
-- Common mistake fixing
-- Word segmentation
-- Duplicate removal
-
-✅ **Translation**
-- Multi-language support (Latin, Greek, Arabic, Hebrew, etc.)
-- HuggingFace transformer models
-- Batch processing
-- Language auto-detection
-
-✅ **REST API Backend**
-- FastAPI with async support
-- CORS enabled
-- Session management
-- Processing history
-
-✅ **Interactive Web Frontend**
-- Drag-and-drop image upload
-- Real-time processing
-- Visual pipeline display
-- Image comparisons
-- Results download
-
-## 🏗️ Architecture
-
-```
-IMAGE INPUT
-    ↓
-    │
-    ├─→ [PREPROCESSING]
-    │   └─ Grayscale, Denoise, CLAHE, Threshold
-    │
-    ├─→ [TEXT DETECTION]
-    │   └─ EasyOCR Region Detection, Bounding Boxes
-    │
-    ├─→ [CHARACTER RECOGNITION]
-    │   └─ OCR Recognition, Confidence Scoring
-    │
-    ├─→ [TEXT CLEANING]
-    │   └─ Noise Removal, Word Fixing, Deduplication
-    │
-    ├─→ [TRANSLATION]
-    │   └─ HuggingFace MT Models, Multi-language
-    │
-    ↓
-TEXT OUTPUT + VISUALIZATION
-```
-
-## 🛠️ Tech Stack
-
-### Backend
-- **Python 3.8+**: Core programming language
-- **FastAPI**: High-performance REST API framework
-- **Uvicorn**: ASGI server
-- **PyTorch**: Deep learning framework
-- **OpenCV**: Computer vision library
-- **EasyOCR**: Text detection and recognition
-- **HuggingFace Transformers**: Multi-language translation
-
-### Frontend
-- **HTML5**: Markup
-- **CSS3**: Styling with gradients and animations
-- **JavaScript**: Interactive functionality
-- **Fetch API**: Async API communication
-
-### Data Processing
-- **NumPy**: Numerical computations
-- **Pillow**: Image handling
-- **SciPy**: Scientific computing
-
-## 📁 Project Structure
-
-```
-Ancient Script/
-│
+```text
+ScriptSenseAI/
 ├── backend/
-│   └── app.py                 # FastAPI application with all endpoints
-│
+│   ├── app.py                         # Main FastAPI app, frontend serving, /process compatibility route
+│   ├── api/                           # Modular API routers
+│   ├── core/                          # Settings, logging, JWT/security helpers
+│   ├── db/                            # SQLAlchemy database models/session
+│   ├── ml/                            # Preprocessing, inference, training, embeddings, active learning
+│   ├── schemas/                       # Pydantic API schemas
+│   ├── services/                      # Dataset ingestion and validation
+│   └── workers/                       # Celery worker scaffolding
 ├── frontend/
-│   ├── templates/
-│   │   └── index.html          # Main web interface
+│   ├── templates/index.html           # Browser UI served at /
 │   └── static/
-│       ├── style.css           # Styling
-│       └── script.js           # Frontend JavaScript
-│
-├── utils/
-│   ├── __init__.py             # Package initialization
-│   ├── preprocessing.py        # Image preprocessing module
-│   ├── text_detection.py       # Text detection module
-│   ├── character_recognition.py # Character recognition
-│   ├── text_cleaning.py        # Text cleaning and correction
-│   └── translation.py          # Translation module
-│
-├── models/
-│   └── (Pre-trained models downloaded on first use)
-│
-├── data/
-│   └── test_images/            # Sample images for testing
-│
-├── pipeline.py                 # Complete pipeline script
-├── test_pipeline.py            # Test suite
-├── requirements.txt            # Python dependencies
-├── .gitignore                  # Git ignore file
-└── README.md                   # This file
+│       ├── style.css                  # Frontend styling and animations
+│       └── script.js                  # Upload/process/language loading logic
+├── utils/                             # Practical OCR, preprocessing, cleaning, translation utilities
+├── infra/k8s/                         # Kubernetes deployment templates
+├── Dockerfile                         # CPU Docker image
+├── Dockerfile.gpu                     # GPU Docker image template
+├── docker-compose.yml                 # API + Postgres + Mongo + Redis + worker stack
+├── requirements.txt                   # Local Python dependencies
+├── requirements-production.txt        # Production dependency set
+├── BACKEND_ARCHITECTURE.md            # Detailed production/research architecture
+└── README.md
 ```
 
-## 🚀 Installation
+## Requirements
 
-### Prerequisites
-- Python 3.8 or higher
-- pip package manager
-- 4GB+ RAM (8GB+ recommended)
-- GPU support optional but recommended
+Use these versions for the smoothest setup:
 
-### Step 1: Clone/Download Project
+- Python `3.10` recommended
+- Git
+- pip
+- 8 GB RAM recommended
+- Internet connection for first dependency/model download
+- Optional: Docker Desktop
+- Optional: CUDA GPU for future acceleration
+
+## Step-by-Step Setup From GitHub
+
+### 1. Clone The Repository
 
 ```bash
-cd "Ancient Script"
+git clone https://github.com/purushotham2628/ScriptSenseAI.git
+cd ScriptSenseAI
 ```
 
-### Step 2: Create Virtual Environment
+If your local folder name is still `Ancient Script`, that is also fine. The commands below should be run from the project root, the folder that contains `backend`, `frontend`, and `requirements.txt`.
 
-```bash
-# On Windows
+### 2. Create A Virtual Environment
+
+Windows PowerShell:
+
+```powershell
 python -m venv venv
-venv\Scripts\activate
+.\venv\Scripts\Activate.ps1
+```
 
-# On macOS/Linux
+Windows Command Prompt:
+
+```cmd
+python -m venv venv
+venv\Scripts\activate.bat
+```
+
+macOS/Linux:
+
+```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### Step 3: Install Dependencies
+### 3. Upgrade pip
+
+```bash
+python -m pip install --upgrade pip
+```
+
+### 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-This installs:
-- FastAPI & Uvicorn for REST API
-- OpenCV for image processing
-- PyTorch & torchvision for deep learning
-- EasyOCR for OCR
-- HuggingFace Transformers for translation
-- NumPy, Pillow for data processing
+This can take several minutes because the project uses OCR, ML, image processing, and API packages.
 
-### Step 4: Download Pre-trained Models
+### 5. Run The Backend
 
-Models are automatically downloaded on first use. Alternatively:
-
-```python
-import easyocr
-reader = easyocr.Reader(['en', 'la', 'el'])
-
-from transformers import MarianMTModel, MarianTokenizer
-model = MarianMTModel.from_pretrained("Helsinki-NLP/Tatoeba-MT-en-en")
-```
-
-## 💻 Usage
-
-### Option 1: Command-Line Pipeline
-
-Process a single image using the complete pipeline:
+Run this from the project root, not from inside `backend/`:
 
 ```bash
-# Basic usage
-python pipeline.py --image stone_inscription.jpg
-
-# With language specification
-python pipeline.py --image manuscript.png --source-lang la
-
-# With output file
-python pipeline.py --image ancient_text.jpg --output results.json
-
-# Ancient Greek example
-python pipeline.py --image greek_script.png --source-lang el --output greek_results.json
+uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-**Output:**
-- Extracted and cleaned text
-- Processing statistics
-- Intermediate images (preprocessed, detected)
-- JSON results file
-
-### Option 2: Web Interface
-
-Start the backend server:
+If `uvicorn` is not recognized, use:
 
 ```bash
-cd backend
-uvicorn app:app --reload --port 8000
+python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Then open in browser:
-```
-http://localhost:8000
-```
+### 6. Open The Frontend
 
-Or access the frontend:
-```
-http://localhost:8000/static
+The frontend is served by the FastAPI backend. Open:
+
+```text
+http://127.0.0.1:8000/
 ```
 
-**Features:**
-- Upload image via drag-and-drop
-- Select source language
-- View pipeline visualization
-- Compare original, preprocessed, and detection images
-- Download results as JSON
+You do not need to start a separate frontend server.
 
-### Option 3: Python API
+### 7. Verify The Backend Is Running
 
-```python
-from pipeline import AncientScriptPipeline
+Open these URLs:
 
-# Initialize pipeline
-pipeline = AncientScriptPipeline(source_language='la', target_language='en')
-
-# Process image
-results = pipeline.process_image('inscription.jpg')
-
-# Access results
-print(results['final_output']['extracted_text'])
-print(results['final_output']['translated_text'])
-
-# Save results
-pipeline.save_results('output.json')
+```text
+http://127.0.0.1:8000/health
+http://127.0.0.1:8000/languages
+http://127.0.0.1:8000/api
 ```
 
-### Option 4: Direct Module Usage
+Expected health response:
 
-```python
-from utils.preprocessing import ImagePreprocessor
-from utils.text_detection import TextDetector
-from utils.text_cleaning import TextCleaner
-
-# Preprocess image
-preprocessor = ImagePreprocessor()
-original, processed = preprocessor.preprocess_complete_pipeline('image.jpg')
-
-# Detect text regions
-detector = TextDetector(languages=['en', 'la'])
-detections, detection_image = detector.detect_text_regions(processed)
-
-# Clean extracted text
-cleaner = TextCleaner()
-cleaned_text = cleaner.clean_text(raw_text)
-```
-
-## 📡 API Endpoints
-
-### Base URL
-```
-http://localhost:8000
-```
-
-### Endpoints
-
-#### GET `/`
-Get API information and available endpoints.
-
-```bash
-curl http://localhost:8000/
-```
-
-#### POST `/upload-image`
-Upload an image file for processing.
-
-```bash
-curl -X POST -F "file=@image.jpg" http://localhost:8000/upload-image
-```
-
-**Response:**
 ```json
 {
-  "success": true,
-  "session_id": "session_20240101_120000",
-  "filename": "image.jpg",
-  "image_info": {
-    "width": 1200,
-    "height": 800,
-    "channels": 3
-  },
-  "image_data": "base64_encoded_image"
+  "status": "healthy",
+  "version": "2.0.0"
 }
 ```
 
-#### POST `/process`
-Process image through complete pipeline.
+## How To Use The Web App
+
+1. Start the backend with `uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload`.
+2. Open `http://127.0.0.1:8000/`.
+3. Upload an image using drag-and-drop or the choose button.
+4. Select a source language.
+5. Click `Run Decoder`.
+6. Review original, preprocessed, and detection images.
+7. Review raw OCR text, cleaned text, translated text, confidence, and statistics.
+8. Download results as JSON if needed.
+
+## Supported Image Inputs
+
+The practical browser flow supports common image uploads:
+
+- PNG
+- JPG / JPEG
+- TIFF / TIF
+- BMP
+- WEBP if the browser provides it as image data
+
+The production dataset ingestion scaffold also supports ZIP datasets, image folders, CSV/JSON annotations, and scanned PDF hooks.
+
+## Source Languages
+
+The frontend loads source languages from `/languages`. Current options include:
+
+- Auto Detect
+- Latin
+- English
+- Ancient Greek / Greek
+- Arabic
+- Hebrew
+- Sanskrit / Devanagari
+- Hindi / Devanagari
+- Tamil
+- Telugu
+- Kannada
+- Malayalam
+- Bengali
+- Chinese
+- Japanese
+- Korean
+- Unknown / Unseen Script
+
+Important note: some languages are best-effort unless the matching EasyOCR model files are available locally. Latin currently uses English-character OCR plus Latin-to-English translation support.
+
+## API Quick Reference
+
+Base URL:
+
+```text
+http://127.0.0.1:8000
+```
+
+Main frontend-compatible endpoints:
+
+```text
+GET  /
+GET  /health
+GET  /api
+GET  /languages
+POST /process
+```
+
+Production-style modular API endpoints:
+
+```text
+POST /api/v1/auth/token
+POST /api/v1/auth/register
+POST /api/v1/datasets/upload
+GET  /api/v1/datasets/{dataset_id}
+POST /api/v1/inference/predict
+POST /api/v1/training/jobs
+GET  /api/v1/training/jobs/{job_id}
+POST /api/v1/active-learning/corrections
+GET  /api/v1/active-learning/buffer
+WS   /api/v1/ws/progress/{job_id}
+```
+
+### Example: Process An Image With curl
 
 ```bash
 curl -X POST \
-  -F "file=@inscription.jpg" \
+  -F "file=@test_input_image.png" \
   -F "source_language=la" \
   -F "target_language=en" \
-  http://localhost:8000/process
+  http://127.0.0.1:8000/process
 ```
 
-**Parameters:**
-- `file`: Image file (multipart/form-data)
-- `source_language`: Language code (default: 'en')
-- `target_language`: Target language (default: 'en')
-
-**Response:** Complete processing results with images and text
-
-#### GET `/get-results`
-Get results from a specific session.
-
-```bash
-curl http://localhost:8000/get-results?session_id=session_20240101_120000
-```
-
-#### GET `/history`
-Get processing history.
-
-```bash
-curl http://localhost:8000/history
-```
-
-#### GET `/status`
-Get system status.
-
-```bash
-curl http://localhost:8000/status
-```
-
-#### GET `/languages`
-Get supported languages.
-
-```bash
-curl http://localhost:8000/languages
-```
-
-#### GET `/health`
-Health check endpoint.
-
-```bash
-curl http://localhost:8000/health
-```
-
-## 📦 Modules
-
-### preprocessing.py
-```python
-ImagePreprocessor()
-├── load_image()              # Load from file or bytes
-├── convert_to_grayscale()    # Grayscale conversion
-├── denoise_image()           # Bilateral filtering
-├── apply_clahe()             # Contrast enhancement
-├── apply_thresholding()      # Binarization
-├── apply_morphological_operations()  # Morphing
-├── resize_image()            # Resizing
-├── preprocess_complete_pipeline()    # Full pipeline
-└── save_image()              # Save to file
-```
-
-### text_detection.py
-```python
-TextDetector()
-├── detect_text_regions()     # Main detection
-├── extract_text_regions()    # Extract ROIs
-├── merge_nearby_detections() # Merge nearby boxes
-├── get_detected_text()       # Get concatenated text
-└── reset()                   # Reset state
-```
-
-### character_recognition.py
-```python
-CharacterRecognizer()
-├── recognize_character()     # Recognize single region
-├── recognize_batch()         # Batch recognition
-├── enhance_recognition()     # Enhanced recognition
-├── batch_recognize_from_detections()  # From detections
-└── reset()                   # Reset state
-```
-
-### text_cleaning.py
-```python
-TextCleaner()
-├── clean_text()              # Main cleaning
-├── remove_ocr_artifacts()    # Remove artifacts
-├── fix_common_mistakes()     # Fix OCR errors
-├── segment_text_into_words() # Segment words
-├── fix_broken_words()        # Fix broken words
-├── remove_special_characters() # Remove special chars
-└── get_cleaning_stats()      # Get statistics
-```
-
-### translation.py
-```python
-TextTranslator()
-├── translate_text()          # Translate single text
-├── translate_batch()         # Batch translation
-├── set_language_pair()       # Change language pair
-├── get_supported_languages() # List supported languages
-└── batch_translate_with_batching()  # Efficient batching
-```
-
-## 📚 Examples
-
-### Example 1: Latin Inscription
-
-```bash
-python pipeline.py --image latin_stone.jpg --source-lang la --output latin_results.json
-```
-
-Output will include:
-- Extracted Latin text
-- English translation
-- Processing statistics
-
-### Example 2: Ancient Greek Manuscript
-
-```bash
-python pipeline.py --image greek_manuscript.png --source-lang el --output greek_output.json
-```
-
-### Example 3: Using Web Interface
-
-1. Open `http://localhost:8000`
-2. Drag image into upload area
-3. Select source language (Latin, Greek, etc.)
-4. Click "Process Image"
-5. View results and download JSON
-
-### Example 4: Python API Integration
+### Example: Process An Image With Python
 
 ```python
-from backend.app import app
-from fastapi.testclient import TestClient
+import requests
 
-client = TestClient(app)
-
-# Upload image
-with open("inscription.jpg", "rb") as f:
-    response = client.post(
-        "/process",
-        files={"file": f},
-        data={"source_language": "la", "target_language": "en"}
+with open("test_input_image.png", "rb") as image_file:
+    response = requests.post(
+        "http://127.0.0.1:8000/process",
+        files={"file": ("test_input_image.png", image_file, "image/png")},
+        data={"source_language": "la", "target_language": "en"},
+        timeout=120,
     )
-    results = response.json()
-    print(results['final_output']['translated_text'])
+
+print(response.status_code)
+print(response.json()["final_output"])
 ```
 
-## 📊 Performance
+## Running With Docker
 
-### Processing Times (Approximate)
+If Docker Desktop is installed, you can run the full service stack:
 
-- **Preprocessing**: 0.5-1.5 seconds
-- **Text Detection**: 2-5 seconds
-- **Recognition**: 3-8 seconds per region
-- **Cleaning**: <1 second
-- **Translation**: 1-3 seconds
-- **Total for average image**: 10-20 seconds
+```bash
+docker compose up --build
+```
 
-### Accuracy
+Then open:
 
-- **Text Detection**: ~85-90% precision
-- **Character Recognition**: ~80-85% accuracy
-- **Translation**: Depends on language pair
+```text
+http://127.0.0.1:8000/
+```
 
-### System Requirements
+The Docker stack includes:
 
-- **Minimum**: 4GB RAM, 2GB disk space
-- **Recommended**: 8GB+ RAM, GPU (CUDA), 5GB disk space
-- **Optimal**: 16GB+ RAM, dedicated GPU (RTX 3070+)
+- API service
+- Background worker scaffold
+- PostgreSQL
+- MongoDB
+- Redis
 
-## 🧪 Testing
+For simple local testing, the Python virtual environment method is faster and easier.
 
-Run the test suite:
+## Troubleshooting
+
+### Port 8000 Is Already In Use
+
+Windows PowerShell:
+
+```powershell
+netstat -ano | Select-String ':8000'
+```
+
+Then stop the shown PID if it is an old Uvicorn process:
+
+```powershell
+Stop-Process -Id <PID> -Force
+```
+
+macOS/Linux:
+
+```bash
+lsof -i :8000
+kill -9 <PID>
+```
+
+### Backend Starts But Browser Shows Old Behavior
+
+Stop the server and restart it:
+
+```bash
+python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Then hard refresh the browser:
+
+- Windows/Linux: `Ctrl + F5`
+- macOS: `Cmd + Shift + R`
+
+### Missing Dependency Error
+
+Reinstall dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+### EasyOCR Model Missing
+
+The helper uses `download_enabled=False` for some OCR reader paths. If a language model is missing, use English/Latin first or initialize/download the needed EasyOCR model manually in Python:
+
+```python
+import easyocr
+reader = easyocr.Reader(["en"], gpu=False)
+```
+
+### Translation Is Slow On First Run
+
+The Latin translation model may download/load on first use. This is normal. Future runs are faster after model caching.
+
+## Development Commands
+
+Compile-check backend Python files:
+
+```bash
+python -m compileall backend utils
+```
+
+Check frontend JavaScript syntax if Node.js is installed:
+
+```bash
+node --check frontend/static/script.js
+```
+
+Run the original pipeline tests:
 
 ```bash
 python test_pipeline.py
 ```
 
-Tests included:
-1. **Preprocessing Test** - Image enhancement pipeline
-2. **Text Detection Test** - Region detection
-3. **Character Recognition Test** - OCR functionality
-4. **Text Cleaning Test** - Noise removal
-5. **Translation Test** - Language translation
-6. **Integration Test** - Complete pipeline
+## Production Architecture
 
-## 🔧 Configuration
+For the full research-grade backend design, read:
 
-### Supported Languages
-
-| Code | Language |
-|------|----------|
-| en | English |
-| la | Latin |
-| el | Ancient/Modern Greek |
-| ar | Arabic |
-| he | Hebrew |
-| de | German |
-| fr | French |
-| es | Spanish |
-
-### Preprocessing Parameters
-
-Modify in `utils/preprocessing.py`:
-- CLAHE clipLimit: `2.0` (increase for more contrast)
-- Bilateral filter kernel: `9` (increase for more denoising)
-- Morphological operations: iterations `1` (increase for more cleaning)
-
-### Detection Confidence Threshold
-
-Default: `0.3` (0.0-1.0 range)
-
-Modify in `utils/text_detection.py` or API call.
-
-## 🚨 Troubleshooting
-
-### Issue: ModuleNotFoundError for easyocr
-
-**Solution:**
-```bash
-pip install --upgrade easyocr
+```text
+BACKEND_ARCHITECTURE.md
 ```
 
-### Issue: CUDA out of memory
+It documents:
 
-**Solution:**
-Set `gpu=False` in TextDetector initialization:
-```python
-detector = TextDetector(languages=['en'], gpu=False)
-```
+- Dataset ingestion
+- Preprocessing
+- Augmentation
+- Hybrid OCR architecture
+- Unseen dataset generalization
+- Active learning
+- Vector database embeddings
+- Training pipeline
+- Database schema
+- Docker/Kubernetes deployment
+- Future SaaS scalability plan
 
-### Issue: Slow processing
+## Notes For Contributors
 
-**Solution:**
-- Use GPU: nvidia-drivers and CUDA toolkit
-- Reduce image resolution before processing
-- Use batch processing for multiple images
+- Do not commit `venv/`, logs, downloaded models, or runtime storage.
+- Keep frontend routes compatible with `/process` unless intentionally migrating the UI to `/api/v1/inference/predict`.
+- The current browser UI is served by FastAPI, so backend and frontend run together from one command.
 
-### Issue: Poor text recognition
+## License
 
-**Solution:**
-- Improve image quality/contrast
-- Use `enhance_recognition()` method
-- Adjust preprocessing parameters
-
-## 📄 License
-
-This project is provided as-is for educational and research purposes.
-
-## 🤝 Contributing
-
-Contributions welcome! Areas for improvement:
-- Additional language support
-- Improved OCR models
-- Performance optimization
-- UI/UX enhancements
-- Deployment guides
-
-## 📞 Support
-
-For issues or questions:
-1. Check this README
-2. Review test_pipeline.py for examples
-3. Check module docstrings
-4. Review error messages carefully
-
-## 🎯 Future Enhancements
-
-- [ ] Batch image processing
-- [ ] Real-time webcam input
-- [ ] Custom model fine-tuning
-- [ ] Database backend for historical records
-- [ ] Advanced text layout analysis
-- [ ] Handwriting recognition support
-- [ ] Mobile app version
-- [ ] Docker containerization
-- [ ] AWS/Cloud deployment
-- [ ] User authentication
-
----
-
-**Built with ❤️ for ancient script preservation**
-
-Last Updated: 2024
-Version: 1.0.0
+This project is provided for educational, research, and prototype SaaS development use.

@@ -4,160 +4,232 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ancient Script Decoder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>🏛️ Ancient Script Decoder</h1>
-            <p class="subtitle">AI-Powered Image Processing Pipeline</p>
-        </header>
+    <div class="ambient-orb orb-one"></div>
+    <div class="ambient-orb orb-two"></div>
+    <div class="ambient-orb orb-three"></div>
+    <div class="grain"></div>
 
-        <!-- Main Content -->
-        <div class="content">
-            <!-- Upload Section -->
-            <section class="upload-section">
-                <h2>Step 1: Upload Image</h2>
-                <div class="upload-area" id="uploadArea">
-                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <p>Drag and drop your image here or click to select</p>
-                    <input type="file" id="fileInput" accept="image/*" hidden>
-                </div>
-                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-                    Choose Image
-                </button>
-            </section>
-
-            <!-- Processing Options -->
-            <section class="options-section">
-                <h2>Step 2: Processing Options</h2>
-                <div class="options-grid">
-                    <div class="option-group">
-                        <label for="sourceLanguage">Source Language:</label>
-                        <select id="sourceLanguage">
-                            <option value="en">English</option>
-                            <option value="la" selected>Latin</option>
-                            <option value="el">Ancient Greek</option>
-                            <option value="ar">Arabic</option>
-                            <option value="he">Hebrew</option>
-                        </select>
-                    </div>
-                    <div class="option-group">
-                        <label for="targetLanguage">Target Language:</label>
-                        <select id="targetLanguage">
-                            <option value="en" selected>English</option>
-                        </select>
-                    </div>
-                </div>
-                <button class="btn btn-success" id="processBtn" onclick="processImage()" disabled>
-                    Process Image
-                </button>
-            </section>
-
-            <!-- Results Section -->
-            <section class="results-section" id="resultsSection" style="display:none;">
-                <h2>Processing Results</h2>
-                
-                <!-- Progress Steps -->
-                <div class="pipeline-display">
-                    <div class="step">
-                        <div class="step-number">1</div>
-                        <div class="step-name">Preprocessing</div>
-                    </div>
-                    <div class="arrow">→</div>
-                    <div class="step">
-                        <div class="step-number">2</div>
-                        <div class="step-name">Detection</div>
-                    </div>
-                    <div class="arrow">→</div>
-                    <div class="step">
-                        <div class="step-number">3</div>
-                        <div class="step-name">Recognition</div>
-                    </div>
-                    <div class="arrow">→</div>
-                    <div class="step">
-                        <div class="step-number">4</div>
-                        <div class="step-name">Cleaning</div>
-                    </div>
-                    <div class="arrow">→</div>
-                    <div class="step">
-                        <div class="step-number">5</div>
-                        <div class="step-name">Translation</div>
-                    </div>
-                </div>
-
-                <!-- Image Comparisons -->
-                <div class="images-grid">
-                    <div class="image-box">
-                        <h3>Original Image</h3>
-                        <img id="originalImage" src="" alt="Original">
-                    </div>
-                    <div class="image-box">
-                        <h3>Preprocessed</h3>
-                        <img id="preprocessedImage" src="" alt="Preprocessed">
-                    </div>
-                    <div class="image-box">
-                        <h3>Text Detection</h3>
-                        <img id="detectionImage" src="" alt="Detection">
-                    </div>
-                </div>
-
-                <!-- Text Results -->
-                <div class="text-results">
-                    <div class="result-box">
-                        <h3>Raw Extracted Text</h3>
-                        <div class="text-content" id="rawText"></div>
-                    </div>
-                    <div class="result-box">
-                        <h3>Cleaned Text</h3>
-                        <div class="text-content" id="cleanedText"></div>
-                    </div>
-                    <div class="result-box">
-                        <h3>Translated Text</h3>
-                        <div class="text-content" id="translatedText"></div>
-                    </div>
-                </div>
-
-                <!-- Statistics -->
-                <div class="stats-box">
-                    <h3>Processing Statistics</h3>
-                    <div class="stats-grid" id="statsGrid"></div>
-                </div>
-
-                <!-- Actions -->
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" onclick="downloadResults()">
-                        Download Results
+    <main class="shell">
+        <section class="hero reveal-card">
+            <div class="hero-copy">
+                <p class="eyebrow">AI epigraphy studio</p>
+                <h1>Decode ancient scripts with a cinematic research console.</h1>
+                <p class="subtitle">Upload a manuscript, tablet, inscription, or fragment and watch the pipeline reveal preprocessing, detection, recognition, cleaning, and translation.</p>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        <span class="btn-icon" aria-hidden="true">✦</span>
+                        Choose Relic Image
                     </button>
-                    <button class="btn btn-secondary" onclick="resetForm()">
-                        Process Another Image
-                    </button>
+                    <a class="btn btn-ghost" href="#processPanel">View Pipeline</a>
                 </div>
-            </section>
 
-            <!-- Loading Spinner -->
-            <div class="loading-spinner" id="loadingSpinner" style="display:none;">
+                <div class="trust-strip" aria-label="Decoder highlights">
+                    <div class="trust-item">
+                        <span class="premium-icon">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M12 3l7 4v5c0 4.4-2.8 7.7-7 9-4.2-1.3-7-4.6-7-9V7l7-4z"></path>
+                                <path d="M9 12l2 2 4-5"></path>
+                            </svg>
+                        </span>
+                        <span>Secure local upload flow</span>
+                    </div>
+                    <div class="trust-item">
+                        <span class="premium-icon">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M4 7h16M4 12h16M4 17h10"></path>
+                                <path d="M7 4v16M17 4v9"></path>
+                            </svg>
+                        </span>
+                        <span>5-stage AI pipeline</span>
+                    </div>
+                    <div class="trust-item">
+                        <span class="premium-icon">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M5 19c4.5-1.2 8.1-4.8 9.3-9.3L15 7l2.7.7C13.9 6.5 10.3 2.9 9 5l-.7 2.7L5.6 7C7.8 10.4 8.6 14.3 5 19z"></path>
+                                <path d="M16 16l3 3M18.5 13.5l1.5-1.5"></path>
+                            </svg>
+                        </span>
+                        <span>Clean exportable results</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="artifact-card" aria-label="Animated ancient script preview">
+                <div class="artifact-glow"></div>
+                <div class="artifact-topline">
+                    <span>Fragment XR-17</span>
+                    <span class="pulse-dot"></span>
+                </div>
+                <div class="tablet">
+                    <span>𐎠</span><span>𐎭</span><span>𐎹</span><span>𐎺</span>
+                    <span>Α</span><span>Ω</span><span>IV</span><span>𐤀</span>
+                    <span>𓂀</span><span>LA</span><span>𐌔</span><span>𐎫</span>
+                </div>
+                <div class="scan-line"></div>
+            </div>
+        </section>
+
+        <section class="control-deck reveal-card" id="processPanel">
+            <div class="section-heading">
+                <p class="eyebrow">Start the expedition</p>
+                <h2>Upload and configure</h2>
+            </div>
+
+            <div class="deck-grid">
+                <section class="panel upload-panel">
+                    <div class="panel-top">
+                        <div class="panel-number">01</div>
+                        <span class="premium-icon large">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M4 17.5V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"></path>
+                                <path d="M8 15l2.4-2.4a1.4 1.4 0 0 1 2 0L15 15l1-1a1.4 1.4 0 0 1 2 0L20 16"></path>
+                                <path d="M8.5 8.5h.01"></path>
+                            </svg>
+                        </span>
+                    </div>
+                    <h3>Place the artifact</h3>
+                    <p>Drag an image into the chamber or choose one from your device.</p>
+
+                    <div class="upload-area" id="uploadArea">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <strong id="uploadTitle">Drop your inscription here</strong>
+                        <span id="uploadHint">PNG, JPG, WEBP, or any image format your browser supports</span>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                    </div>
+                </section>
+
+                <section class="panel options-panel">
+                    <div class="panel-top">
+                        <div class="panel-number">02</div>
+                        <span class="premium-icon large">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5l2.6-1.5M17.2 9l2.6-1.5"></path>
+                                <path d="M12 8l4 2.3v4.4L12 17l-4-2.3v-4.4L12 8z"></path>
+                            </svg>
+                        </span>
+                    </div>
+                    <h3>Tune the lens</h3>
+                    <p>Select the source language family and translation target.</p>
+
+                    <div class="options-grid">
+                        <div class="option-group">
+                            <label for="sourceLanguage">Source language</label>
+                            <select id="sourceLanguage">
+                                <option value="en">English</option>
+                                <option value="la" selected>Latin</option>
+                                <option value="el">Ancient Greek</option>
+                                <option value="ar">Arabic</option>
+                                <option value="he">Hebrew</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label for="targetLanguage">Target language</label>
+                            <select id="targetLanguage">
+                                <option value="en" selected>English</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-success" id="processBtn" onclick="processImage()" disabled>
+                        Run Decoder
+                    </button>
+                </section>
+            </div>
+        </section>
+
+        <div class="loading-spinner" id="loadingSpinner" style="display:none;">
+            <div class="spinner-wrap">
                 <div class="spinner"></div>
-                <p id="loadingText">Processing image...</p>
+                <div class="spinner-runes">AI</div>
             </div>
-
-            <!-- Error Message -->
-            <div class="error-message" id="errorMessage" style="display:none;">
-                <span id="errorText"></span>
-                <button onclick="closeError()">×</button>
-            </div>
+            <p id="loadingText">Processing image...</p>
         </div>
 
-        <!-- Footer -->
+        <div class="error-message" id="errorMessage" style="display:none;">
+            <span id="errorText"></span>
+            <button onclick="closeError()" aria-label="Close error">x</button>
+        </div>
+
+        <section class="results-section reveal-card" id="resultsSection" style="display:none;">
+            <div class="section-heading centered">
+                <p class="eyebrow">Recovered signal</p>
+                <h2>Processing Results</h2>
+            </div>
+
+            <div class="pipeline-display">
+                <div class="step"><div class="step-number">1</div><div class="step-name">Preprocessing</div></div>
+                <div class="arrow">→</div>
+                <div class="step"><div class="step-number">2</div><div class="step-name">Detection</div></div>
+                <div class="arrow">→</div>
+                <div class="step"><div class="step-number">3</div><div class="step-name">Recognition</div></div>
+                <div class="arrow">→</div>
+                <div class="step"><div class="step-number">4</div><div class="step-name">Cleaning</div></div>
+                <div class="arrow">→</div>
+                <div class="step"><div class="step-number">5</div><div class="step-name">Translation</div></div>
+            </div>
+
+            <div class="images-grid">
+                <article class="image-box">
+                    <h3>Original Image</h3>
+                    <img id="originalImage" src="" alt="Original upload preview">
+                </article>
+                <article class="image-box">
+                    <h3>Preprocessed</h3>
+                    <img id="preprocessedImage" src="" alt="Preprocessed output">
+                </article>
+                <article class="image-box">
+                    <h3>Text Detection</h3>
+                    <img id="detectionImage" src="" alt="Detected text regions">
+                </article>
+            </div>
+
+            <div class="text-results">
+                <article class="result-box">
+                    <span class="result-kicker">OCR signal</span>
+                    <h3>Raw Extracted Text</h3>
+                    <div class="text-content" id="rawText"></div>
+                </article>
+                <article class="result-box">
+                    <span class="result-kicker">Refined</span>
+                    <h3>Cleaned Text</h3>
+                    <div class="text-content" id="cleanedText"></div>
+                </article>
+                <article class="result-box featured-result">
+                    <span class="result-kicker">Translation</span>
+                    <h3>Translated Text</h3>
+                    <div class="text-content" id="translatedText"></div>
+                </article>
+            </div>
+
+            <div class="stats-box">
+                <div>
+                    <p class="eyebrow">Diagnostics</p>
+                    <h3>Processing Statistics</h3>
+                </div>
+                <div class="stats-grid" id="statsGrid"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="downloadResults()">Download Results</button>
+                <button class="btn btn-ghost light" onclick="resetForm()">Process Another Image</button>
+            </div>
+        </section>
+
         <footer class="footer">
-            <p>Ancient Script Decoder v1.0 | Powered by AI & PyTorch</p>
+            <span>Ancient Script Decoder v1.0</span>
+            <span>Powered by AI, PyTorch, and a suspicious amount of curiosity</span>
         </footer>
-    </div>
+    </main>
 
     <script src="/static/script.js"></script>
 </body>
