@@ -65,6 +65,12 @@ class PredictionResponse(BaseModel):
     corrected_text: str = ""
     translated_text: str = ""
     confidence: float = 0.0
+    detected_language: str = ""
+    image_quality_score: float = 0.0
+    ocr_engine_used: str = ""
+    processing_steps: List[Dict[str, Any]] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+    timing_ms: Dict[str, float] = Field(default_factory=dict)
     unknown_symbol_ratio: float = 0.0
     anomaly_score: float = 0.0
     nearest_symbols: List[Dict[str, Any]] = Field(default_factory=list)

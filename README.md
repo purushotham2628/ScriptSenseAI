@@ -26,7 +26,12 @@ ScriptSenseAI/
 │   ├── api/                           # Modular API routers
 │   ├── core/                          # Settings, logging, JWT/security helpers
 │   ├── db/                            # SQLAlchemy database models/session
-│   ├── ml/                            # Preprocessing, inference, training, embeddings, active learning
+│   ├── ml/
+│   │   ├── ocr/                       # Adaptive OCR pipeline, quality analysis, ensemble OCR, confidence fusion
+│   │   ├── inference/                 # API-facing prediction pipeline
+│   │   ├── preprocessing/             # Advanced preprocessing utilities
+│   │   ├── training/                  # Training scaffolding
+│   │   └── embeddings/                # Vector search scaffolding
 │   ├── schemas/                       # Pydantic API schemas
 │   ├── services/                      # Dataset ingestion and validation
 │   └── workers/                       # Celery worker scaffolding
@@ -41,6 +46,7 @@ ScriptSenseAI/
 ├── Dockerfile.gpu                     # GPU Docker image template
 ├── docker-compose.yml                 # API + Postgres + Mongo + Redis + worker stack
 ├── requirements.txt                   # Local Python dependencies
+├── requirements-ocr-optional.txt      # Optional PaddleOCR/Tesseract/Real-ESRGAN/SymSpell/langdetect extras
 ├── requirements-production.txt        # Production dependency set
 ├── BACKEND_ARCHITECTURE.md            # Detailed production/research architecture
 └── README.md
@@ -60,21 +66,32 @@ Use these versions for the smoothest setup:
 
 ## Step-by-Step Setup From GitHub
 
+Follow these commands from a terminal after cloning the repository.
+
 ### 1. Clone The Repository
 
-```bash
+Windows PowerShell, Command Prompt, macOS, or Linux:
+
+```text
 git clone https://github.com/purushotham2628/ScriptSenseAI.git
 cd ScriptSenseAI
 ```
 
 If your local folder name is still `Ancient Script`, that is also fine. The commands below should be run from the project root, the folder that contains `backend`, `frontend`, and `requirements.txt`.
 
-### 2. Create A Virtual Environment
+### 2. Create And Activate A Virtual Environment
 
 Windows PowerShell:
 
 ```powershell
 python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks activation, run this once and activate again:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 .\venv\Scripts\Activate.ps1
 ```
 
@@ -106,18 +123,48 @@ pip install -r requirements.txt
 
 This can take several minutes because the project uses OCR, ML, image processing, and API packages.
 
-### 5. Run The Backend
+Optional research OCR engines:
+
+```bash
+pip install -r requirements-ocr-optional.txt
+```
+
+These optional packages enable PaddleOCR, Tesseract Python bindings, SymSpell, language detection, and Real-ESRGAN integration when the matching model files or system binaries are available. The app still runs without them and safely falls back to installed engines.
+
+Heavy OCR engines and translation models are disabled by default to avoid long first-run downloads. Enable them only after installing the required packages/models:
+
+Windows PowerShell:
+
+```powershell
+$env:SCRIPTSENSE_ENABLE_HEAVY_OCR="1"
+$env:SCRIPTSENSE_ENABLE_TRANSLATION_MODELS="1"
+```
+
+macOS/Linux:
+
+```bash
+export SCRIPTSENSE_ENABLE_HEAVY_OCR=1
+export SCRIPTSENSE_ENABLE_TRANSLATION_MODELS=1
+```
+
+### 5. Run The Backend And Frontend
 
 Run this from the project root, not from inside `backend/`:
 
 ```bash
-uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-If `uvicorn` is not recognized, use:
+If port `8000` is already in use, run on another port:
 
 ```bash
-python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn backend.app:app --host 127.0.0.1 --port 8001 --reload
+```
+
+You should see output similar to:
+
+```text
+Uvicorn running on http://127.0.0.1:8000
 ```
 
 ### 6. Open The Frontend
@@ -140,6 +187,8 @@ http://127.0.0.1:8000/languages
 http://127.0.0.1:8000/api
 ```
 
+If you used port `8001`, replace `8000` with `8001` in each URL.
+
 Expected health response:
 
 ```json
@@ -151,7 +200,7 @@ Expected health response:
 
 ## How To Use The Web App
 
-1. Start the backend with `uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload`.
+1. Start the backend with `python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload`.
 2. Open `http://127.0.0.1:8000/`.
 3. Upload an image using drag-and-drop or the choose button.
 4. Select a source language.
@@ -324,6 +373,12 @@ Reinstall dependencies:
 pip install -r requirements.txt
 ```
 
+For optional research OCR engines:
+
+```bash
+pip install -r requirements-ocr-optional.txt
+```
+
 ### EasyOCR Model Missing
 
 The helper uses `download_enabled=False` for some OCR reader paths. If a language model is missing, use English/Latin first or initialize/download the needed EasyOCR model manually in Python:
@@ -378,6 +433,31 @@ It documents:
 - Database schema
 - Docker/Kubernetes deployment
 - Future SaaS scalability plan
+
+## Future Improvements And Features
+
+Here are strong next features you can add as the project grows:
+
+- Add a curated benchmark suite for ancient manuscripts, inscriptions, palm-leaf scans, stone engravings, coins, seals, and damaged documents.
+- Add a dataset labeling UI so users can correct OCR output line by line and feed corrections into active learning.
+- Add model fine-tuning jobs for unseen scripts using user-uploaded datasets.
+- Add native Tesseract language-pack setup documentation for Latin, Greek, Sanskrit, Arabic, Hebrew, and Indic scripts.
+- Add downloadable Real-ESRGAN model setup scripts and GPU acceleration profiles.
+- Add per-line OCR comparison views showing EasyOCR, PaddleOCR, Tesseract, and TrOCR outputs side by side.
+- Add confidence heatmaps on manuscript images so users can see which regions are unreliable.
+- Add script similarity search using vector embeddings for unknown or rare scripts.
+- Add human-review workflows for low-confidence predictions before translation is shown.
+- Add historical lexicons for Latin, Ancient Greek, Sanskrit transliteration, Brahmi-derived scripts, and epigraphic abbreviations.
+- Add translation memory and glossary controls so repeated inscription phrases translate consistently.
+- Add batch processing for folders, ZIP uploads, and dataset-level OCR reports.
+- Add PDF manuscript ingestion with page splitting, deskewing, and page-level OCR.
+- Add export formats such as ALTO XML, PAGE XML, TEI XML, JSONL, CSV, and searchable PDF.
+- Add user accounts, project workspaces, private datasets, and audit logs for research teams.
+- Add cloud deployment templates for GPU workers, async queues, persistent model cache, and object storage.
+- Add monitoring dashboards for OCR latency, engine failure rate, confidence distribution, and translation blocking rate.
+- Add automated regression tests using noisy synthetic manuscripts and real scanned samples.
+- Add a mobile-friendly capture flow with live blur/skew/readability warnings before upload.
+- Add a plugin system for custom OCR models trained by universities or research labs.
 
 ## Notes For Contributors
 

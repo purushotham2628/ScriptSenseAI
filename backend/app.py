@@ -13,18 +13,12 @@ from fastapi.staticfiles import StaticFiles
 from backend.api.router import api_router
 from backend.core.config import get_settings
 from backend.core.logging import configure_logging
-from utils.preprocessing import ImagePreprocessor
-from utils.text_cleaning import TextCleaner
-from utils.text_detection import TextDetector
-from utils.translation import TextTranslator
+from backend.ml.ocr import AncientOCRPipeline
 
 settings = get_settings()
 configure_logging()
 
-preprocessor = ImagePreprocessor()
-detector = TextDetector(languages=["en"])
-cleaner = TextCleaner()
-translator = TextTranslator(source_lang="la", target_lang="en")
+ocr_pipeline = AncientOCRPipeline()
 
 SUPPORTED_SOURCE_LANGUAGES = [
     {"code": "auto", "label": "Auto Detect", "ocr": ["en"], "note": "Best-effort script detection"},
@@ -91,7 +85,7 @@ async def api_info():
         "version": "2.0.0",
         "architecture": "modular_research_grade_backend",
         "primary_api": f"/api/{settings.api_version}",
-        "pipeline": "UPLOAD -> PREPROCESS -> SEGMENTATION -> FEATURE_EXTRACTION -> OCR -> CONTEXT_CORRECTION -> TRANSLATION -> STORAGE -> VISUALIZATION",
+        "pipeline": "INPUT_IMAGE -> IMAGE_QUALITY_ANALYSIS -> ADAPTIVE_PREPROCESSING -> SUPER_RESOLUTION -> LINE_SEGMENTATION -> MULTI_OCR_ENSEMBLE -> CONFIDENCE_FUSION -> OCR_CORRECTION -> LANGUAGE_DETECTION -> CONFIDENCE_AWARE_TRANSLATION",
     }
 
 
@@ -125,92 +119,77 @@ async def legacy_process(
     try:
         contents = await file.read()
         requested_source_language = source_lang or source_language or "la"
-        if requested_source_language == "auto":
-            requested_source_language = "la"
         requested_target_language = target_language or "en"
 
-        original, processed = preprocessor.preprocess_complete_pipeline(image_bytes=contents)
-        ocr_image = preprocessor.ocr_image if preprocessor.ocr_image is not None else processed
-        preprocessed_b64 = encode_image_to_base64(processed)
-
-        ocr_result = detector.extract_text(
-            ocr_image,
-            confidence_threshold=0.2,
-            source_lang=requested_source_language,
+        result = ocr_pipeline.process_bytes(
+            contents,
+            source_language=requested_source_language,
+            target_language=requested_target_language,
         )
-        detections = ocr_result["detections"]
-        detection_image = detector._draw_bounding_boxes(ocr_image, detections)
-        detection_b64 = encode_image_to_base64(detection_image)
-
-        raw_text = ocr_result["raw_text"]
-        recognized_texts = [item["text"] for item in ocr_result["results"]]
-        cleaned_text = cleaner.clean_alpha_text(raw_text)
-        cleaned_stats = cleaner.get_cleaning_stats(raw_text, cleaned_text)
-
-        translation_result = translator.translate_text(
-            cleaned_text,
-            source_lang=ocr_result["source_language"],
-            target_lang=requested_target_language,
+        preprocessed_b64 = encode_image_to_base64(result.preprocessing_preview)
+        detection_b64 = encode_image_to_base64(result.segmentation_preview)
+        api_result = result.to_api_dict()
+        confidence = float(result.confidence)
+        unknown_or_low_confidence = confidence < 0.50 or not result.ocr_text.strip()
+        translation_details = result.details.get("translation", {})
+        line_details = next(
+            (step.get("details", {}) for step in result.processing_steps if step.get("name") == "line_segmentation"),
+            {},
         )
-        notes = [
-            ocr_result.get("note", ""),
-            translation_result.get("note", ""),
-        ]
-        note = "; ".join(dict.fromkeys(item for item in notes if item))
-        confidence = float(ocr_result["confidence"])
-        unknown_or_low_confidence = confidence < 0.35 or not raw_text.strip()
 
         return {
             "success": True,
             "timestamp": datetime.now().isoformat(),
-            "raw_text": raw_text,
-            "cleaned_text": cleaned_text,
-            "translated_text": translation_result["translated_text"],
-            "source_language": ocr_result["source_language"],
+            **api_result,
+            "raw_text": result.ocr_text,
+            "cleaned_text": result.cleaned_text,
+            "translated_text": result.translated_text,
+            "source_language": result.detected_language,
             "target_language": requested_target_language,
             "confidence": confidence,
-            "note": note,
+            "note": "; ".join(result.warnings) or translation_details.get("note", ""),
             "pipeline": {
                 "preprocessing": {
                     "status": "completed",
                     "image": preprocessed_b64,
-                    "info": "Grayscale, resize, brightness normalization, CLAHE, blur, adaptive threshold",
+                    "info": "Quality analysis, illumination normalization, CLAHE, edge-preserving denoise, adaptive threshold preview",
                 },
                 "detection": {
                     "status": "completed",
                     "image": detection_b64,
-                    "regions_found": len(detections),
-                    "detections": detections[:25],
+                    "regions_found": line_details.get("line_count", 0),
+                    "detections": line_details.get("lines", [])[:25],
                 },
                 "recognition": {
                     "status": "completed",
-                    "recognized_texts": recognized_texts[:25],
-                    "raw_text": raw_text,
+                    "recognized_texts": [candidate.text for candidate in result.candidates[:25]],
+                    "raw_text": result.ocr_text,
                     "confidence": confidence,
+                    "engine": result.ocr_engine_used,
                 },
                 "cleaning": {
                     "status": "completed",
-                    "original_length": cleaned_stats["original_length"],
-                    "cleaned_length": cleaned_stats["cleaned_length"],
-                    "cleaned_text": cleaned_text,
+                    "original_length": len(result.ocr_text),
+                    "cleaned_length": len(result.cleaned_text),
+                    "cleaned_text": result.cleaned_text,
                 },
                 "translation": {
                     "status": "completed",
-                    "source_language": ocr_result["source_language"],
+                    "source_language": result.detected_language,
                     "target_language": requested_target_language,
-                    "original_text": cleaned_text,
-                    "translated_text": translation_result["translated_text"],
-                    "translated": translation_result["translated"],
-                    "note": translation_result.get("note", ""),
+                    "original_text": result.cleaned_text,
+                    "translated_text": result.translated_text,
+                    "translated": translation_details.get("translated", False),
+                    "note": translation_details.get("note", ""),
                 },
             },
             "final_output": {
-                "extracted_text": cleaned_text,
-                "translated_text": translation_result["translated_text"],
+                "extracted_text": result.cleaned_text,
+                "translated_text": result.translated_text,
                 "confidence_score": confidence,
             },
             "requires_human_review": unknown_or_low_confidence,
-            "anomaly_score": 1.0 - confidence,
+            "anomaly_score": result.details.get("anomaly_score", 1.0 - confidence),
             "nearest_symbols": [],
         }
     except Exception as exc:
